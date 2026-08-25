@@ -28,6 +28,7 @@ export function useUrbanPulse() {
   const [graph, setGraph] = useState<CityGraph>(() => getInitialGraph());
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [recoveryResult, setRecoveryResult] = useState<SimulationResult | null>(null);
+  const [initialFailures, setInitialFailures] = useState<string[]>([]);
   const [experimentResults, setExperimentResults] = useState<{
     basic: ExperimentResult;
     criticalityAware: ExperimentResult;
@@ -48,6 +49,7 @@ export function useUrbanPulse() {
       setSimulationResult(result);
       setRecoveryResult(null);
       setExperimentResults(null);
+      setInitialFailures([serviceId]);
       return applyStatesToGraph(baseGraph, result.finalStates);
     });
   }, []);
@@ -64,6 +66,7 @@ export function useUrbanPulse() {
       setSimulationResult(result);
       setRecoveryResult(null);
       setExperimentResults(null);
+      setInitialFailures(serviceIds);
       return applyStatesToGraph(baseGraph, result.finalStates);
     });
   }, []);
@@ -116,32 +119,25 @@ export function useUrbanPulse() {
   }, []);
 
   const runExperimentComparison = useCallback(() => {
-    setGraph((prev) => {
-      const failedServices = prev.nodes
-        .filter((n) => n.status !== 'healthy')
-        .map((n) => n.id);
+    if (initialFailures.length === 0) return;
 
-      if (failedServices.length === 0) return prev;
-
-      const results = runExperiment({
-        graph: getInitialGraph(),
-        initialFailures: failedServices,
-      });
-
-      setExperimentResults({
-        basic: results.basic,
-        criticalityAware: results.criticalityAware,
-      });
-
-      return prev;
+    const results = runExperiment({
+      graph: getInitialGraph(),
+      initialFailures,
     });
-  }, []);
+
+    setExperimentResults({
+      basic: results.basic,
+      criticalityAware: results.criticalityAware,
+    });
+  }, [initialFailures]);
 
   const reset = useCallback(() => {
     setGraph(getInitialGraph());
     setSimulationResult(null);
     setRecoveryResult(null);
     setExperimentResults(null);
+    setInitialFailures([]);
     setSelectedNode(null);
     setSimulationTime(0);
     setIsSimulating(false);

@@ -203,12 +203,11 @@ export function runRecovery(
           const targetNode = getNode(workingGraph, edge.target);
           if (!targetNode || targetNode.status === 'healthy') continue;
 
-          const allUpstreamHealthy = getDownstreamEdges(workingGraph, targetNode.id)
-            .reverse()
-            .every(e => {
-              const src = getNode(workingGraph, e.source);
-              return src && src.status === 'healthy';
-            });
+          const incomingEdges = workingGraph.edges.filter(e => e.target === targetNode.id);
+          const allUpstreamHealthy = incomingEdges.length === 0 || incomingEdges.every(e => {
+            const src = getNode(workingGraph, e.source);
+            return src && src.status === 'healthy';
+          });
 
           if (allUpstreamHealthy) {
             const prevState = targetNode.status;
